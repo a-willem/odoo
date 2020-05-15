@@ -88,12 +88,15 @@ class AccountInvoiceSend(models.TransientModel):
             if self.env.context.get('mark_invoice_as_sent'):
                 #Salesman send posted invoice, without the right to write
                 #but they should have the right to change this flag
-                self.mapped('invoice_ids').sudo().write({'invoice_sent': True})
+                self.mapped('invoice_ids').filtered(lambda i: i.partner_id.email != False).sudo().write({'invoice_sent': True})
 
-    def _print_document(self):
+    def _print_document(self, only_no_mail=False):
         """ to override for each type of models that will use this composer."""
         self.ensure_one()
-        action = self.invoice_ids.action_invoice_print()
+        if only_no_mail:
+            action = self.invoice_ids.filtered(lambda i: i.partner_id.email == False).action_invoice_print()
+        else:
+            action = self.invoice_ids.action_invoice_print()
         action.update({'close_on_report_download': True})
         return action
 
